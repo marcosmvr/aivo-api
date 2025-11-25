@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String @id @default(uuid())
+  email        String @unique
+  passwordHash String @map("password_hash")
+  name         String
+  role         Role   @default(GESTOR)
+
+  // offers
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  offers    Offer[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  GESTOR
+}
+
+model Offer {
+  id            String        @id @default(uuid())
+  userId        String        @map("user_id")
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  niche         String
+  country       String
+  trafficSource String        @map("traffic_source")
+  funnelType    String        @map("funnel_type")
+  startDate     DateTime      @map("start_date")
+  endDate       DateTime?     @map("end_date")
+  budget        Decimal?      @db.Decimal(10, 2)
+  description   String?       @db.Text
+  status        OfferStatus   @default(ACTIVE)
+  metrics       OfferMetrics?
+  // reports
+
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @default(now()) @map("updated_at")
+  aireports AIReport[]
+
+  @@index([userId])
+  @@index([niche])
+  @@index([country])
+  @@map("offers")
+}
+
+enum OfferStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+model OfferMetrics {
+  id          String   @id @default(uuid())
+  offerId     String   @unique @map("offer_id")
+  offer       Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  impressions Int?
+  clicks      Int?
+  ctr         Decimal? @db.Decimal(5, 2)
+  cpc         Decimal? @db.Decimal(10, 2)
+  cpm         Decimal? @db.Decimal(10, 2)
+
+  leads          Int?
+  sales          Int?
+  conversionRate Decimal? @map("conversion_rate") @db.Decimal(5, 2)
+
+  revenue Decimal? @db.Decimal(10, 2)
+  cost    Decimal? @db.Decimal(10, 2)
+  roas    Decimal? @db.Decimal(10, 2)
+  aov     Decimal? @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("offer_metrics")
+}
+
+model Benchmark {
+  id String @id @default(uuid())
+
+  niche         String
+  country       String
+  trafficSource String @map("traffic_source")
+  funnelType    String @map("funnel_type")
+
+  metricName String  @map("metric_name")
+  minValue   Decimal @map("min_value") @db.Decimal(10, 2)
+  maxValue   Decimal @map("max_value") @db.Decimal(10, 2)
+  idealValue Decimal @map("ideal_value") @db.Decimal(10, 2)
+
+  description String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([niche, country, trafficSource, funnelType, metricName])
+  @@index([niche, country, trafficSource, funnelType])
+  @@map("benchmarks")
+}
+
+model AIReport {
+  id      String @id @default(uuid())
+  offerId String @map("offer_id")
+  offer   Offer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  summary                 String @db.Text
+  validationStatus        String @map("validation_status")
+  validationExplanation   String @map("validation_explanation") @db.Text
+  bottlenecks             Json
+  actionPlan              Json   @map("action_plan")
+  missingData             Json   @map("missing_data")
+  nextTestRecommendations String @map("next_test_recommendations") @db.Text
+
+  aiModel          String @map("ai_model")
+  promptTokens     Int?   @map("prompt_tokens")
+  completionTokens Int?   @map("completion_tokens")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([offerId])
+  @@map("ai_reports")
+}
