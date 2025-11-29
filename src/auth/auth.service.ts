@@ -14,6 +14,7 @@ import { User } from '@prisma/client'
 import { ZodError } from 'zod'
 import { CreateUserSchema } from './schema/create-user.schema'
 import { SignInUserSchema } from './schema/login-user.schema'
+import { NumberSchema } from 'node_modules/zod/v4/core/json-schema.cjs'
 
 export interface AuthResponse {
   access_token: string
@@ -30,7 +31,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {
-    this.saltRounds = 10
+    const saltRounds = this.config.get<number>('BCRYPT_SALT_ROUNDS', 10)
   }
 
   async create(data: unknown): Promise<User> {
