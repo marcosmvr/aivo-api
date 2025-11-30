@@ -15,8 +15,8 @@ import { ZodValidationPipe } from 'src/utils/ZodValidationPipe'
 import { CreateOfferSchema } from './schema/create-offer.schema'
 import { OfferService } from './offer.service'
 import { UpdateOfferSchema } from './schema/update-offer.schema'
-import { JwtAuthGuard } from 'src/auth/auth.guard'
-import { CurrentUser } from 'src/auth/current-user.decorator'
+import { JwtAuthGuard } from 'src/auth/guards/auth.guard'
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator'
 
 @Controller('offers')
 @UseGuards(JwtAuthGuard)

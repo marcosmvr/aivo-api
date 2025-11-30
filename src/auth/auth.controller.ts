@@ -12,7 +12,7 @@ import { AuthService } from './auth.service'
 import { CreateUserSchema } from './schema/create-user.schema'
 import { ZodValidationPipe } from 'src/utils/ZodValidationPipe'
 import { SignInUserSchema } from './schema/login-user.schema'
-import { JwtAuthGuard } from './auth.guard'
+import { JwtAuthGuard } from './guards/auth.guard'
 import type { FastifyRequest } from 'fastify'
 
 @Controller('auth')

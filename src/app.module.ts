@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config'
 import { AuthModule } from './auth/auth.module'
 import { OfferModule } from './offer/offer.module'
 import { MetricsModule } from './metrics/metrics.module'
+import { BenchmarksModule } from './benchmarks/benchmark.module'
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { MetricsModule } from './metrics/metrics.module'
     AuthModule,
     OfferModule,
     MetricsModule,
+    BenchmarksModule,
   ],
 })
 export class AppModule {}
