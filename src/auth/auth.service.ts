@@ -39,12 +39,10 @@ export class AuthService {
       const validatedData = CreateUserSchema.parse(data)
       const { email, password, name, role } = validatedData
 
-      // Usa o repository ao invés do Prisma diretamente
       await this.checkEmailExists(email)
 
       const hashedPassword = await this.hashPassword(password)
 
-      // Usa o repository para criar
       const user = await this.authRepository.create({
         email,
         passwordHash: hashedPassword,
