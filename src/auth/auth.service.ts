@@ -14,7 +14,7 @@ import { User } from '@prisma/client'
 import { ZodError } from 'zod'
 import { CreateUserSchema } from './schema/create-user.schema'
 import { SignInUserSchema } from './schema/login-user.schema'
-import { NumberSchema } from 'node_modules/zod/v4/core/json-schema.cjs'
+import type { IAuthRepository } from './repositories/auth.repository.interface'
 
 export interface AuthResponse {
   access_token: string
@@ -27,7 +27,7 @@ export class AuthService {
   private readonly saltRounds: number
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly authRepository: IAuthRepository,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
   ) {
@@ -39,17 +39,17 @@ export class AuthService {
       const validatedData = CreateUserSchema.parse(data)
       const { email, password, name, role } = validatedData
 
+      // Usa o repository ao invés do Prisma diretamente
       await this.checkEmailExists(email)
 
       const hashedPassword = await this.hashPassword(password)
 
-      const user = await this.prisma.user.create({
-        data: {
-          email,
-          passwordHash: hashedPassword,
-          name,
-          role,
-        },
+      // Usa o repository para criar
+      const user = await this.authRepository.create({
+        email,
+        passwordHash: hashedPassword,
+        name,
+        role,
       })
 
       this.logger.log(`Novo usuário criado: ${user.id}`)
@@ -90,12 +90,9 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token.')
       }
 
-      const userExists = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true },
-      })
+      const user = await this.authRepository.findById(userId)
 
-      if (!userExists) {
+      if (!user) {
         throw new UnauthorizedException('User not found.')
       }
 
@@ -109,12 +106,9 @@ export class AuthService {
   }
 
   private async checkEmailExists(email: string): Promise<void> {
-    const userExists = await this.prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    })
+    const exists = await this.authRepository.emailExists(email)
 
-    if (userExists) {
+    if (exists) {
       this.logger.warn(
         `Tentativa de criar usuário com email duplicado: ${email}`,
       )
@@ -125,9 +119,7 @@ export class AuthService {
   }
 
   private async findUserByEmail(email: string): Promise<User> {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    })
+    const user = await this.authRepository.findByEmail(email)
 
     if (!user) {
       this.logger.warn(`Tentativa de login com email não registrado: ${email}`)
