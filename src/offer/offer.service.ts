@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -9,20 +10,23 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service'
 import { CreateOfferSchema } from './schema/create-offer.schema'
 import { UpdateOfferSchema } from './schema/update-offer.schema'
-import { Offer } from '@prisma/client'
+import {
+  type IOfferRepository,
+  OFFERS_REPOSITORY,
+} from './repositories/offer.repository.interface'
 
 @Injectable()
 export class OfferService {
   private readonly logger = new Logger(OfferService.name)
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @Inject(OFFERS_REPOSITORY)
+    private readonly offersRepository: IOfferRepository,
+  ) {}
 
-  async create(data: CreateOfferSchema & { userId: string }): Promise<Offer> {
+  async create(data: CreateOfferSchema, userId: string) {
     try {
-      const offer = await this.prisma.offer.create({
-        data,
-        include: { metrics: true },
-      })
+      const offer = await this.offersRepository.create(data, userId)
       this.logger.log(`Oferta ${offer.id} criada`)
       return offer
     } catch (error) {
@@ -30,12 +34,9 @@ export class OfferService {
     }
   }
 
-  async findByUserId(userId: string): Promise<Offer[]> {
+  async findByUserId(userId: string) {
     try {
-      return await this.prisma.offer.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-      })
+      return await this.offersRepository.findByUserId(userId)
     } catch (error) {
       this.logger.error(
         `Erro ao listar ofertas: ${error instanceof Error ? error.message : 'Unknown'}`,
@@ -44,12 +45,9 @@ export class OfferService {
     }
   }
 
-  async findById(id: string, userId: string): Promise<Offer> {
+  async findById(id: string, userId: string) {
     try {
-      const offer = await this.prisma.offer.findFirst({
-        where: { id, userId },
-        include: { metrics: true, reports: true },
-      })
+      const offer = await this.offersRepository.findByOfferId(id, userId)
 
       if (!offer) {
         throw new NotFoundException('Oferta não encontrada ou acesso negado.')
@@ -64,16 +62,9 @@ export class OfferService {
     }
   }
 
-  async updateById(
-    id: string,
-    userId: string,
-    data: UpdateOfferSchema,
-  ): Promise<Offer> {
+  async updateById(id: string, userId: string, data: UpdateOfferSchema) {
     try {
-      const offer = await this.prisma.offer.update({
-        where: { id, userId },
-        data,
-      })
+      const offer = await this.offersRepository.updateById(id, userId, data)
       this.logger.log(`Oferta ${offer.id} atualizada`)
       return offer
     } catch (error) {
@@ -86,9 +77,7 @@ export class OfferService {
 
   async deleteById(id: string, userId: string) {
     try {
-      const offer = await this.prisma.offer.delete({
-        where: { id, userId },
-      })
+      const offer = await this.offersRepository.deleteById(id, userId)
       this.logger.log(`Oferta ${offer.id} apagada`)
       return offer
     } catch (error) {
