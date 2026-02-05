@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module'
 import { OfferModule } from './offer/offer.module'
 import { MetricsModule } from './metrics/metrics.module'
 import { BenchmarksModule } from './benchmarks/benchmark.module'
+import { AIAnalysisModule } from './ai/ai-analysis.module'
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { BenchmarksModule } from './benchmarks/benchmark.module'
     OfferModule,
     MetricsModule,
     BenchmarksModule,
+    AIAnalysisModule,
   ],
 })
 export class AppModule {}
