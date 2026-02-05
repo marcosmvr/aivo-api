@@ -10,6 +10,7 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  HttpException,
 } from '@nestjs/common'
 import { Request } from 'express'
 import { AiAnalysisService } from './ai-analysis.service'
@@ -17,6 +18,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { AIAnalysisInputSchema } from './schemas/ai-analysis.schema'
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard'
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator'
+import { AiRateLimitService } from './rate-limiting.service'
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -31,6 +33,7 @@ export class AiAnalysisController {
   constructor(
     private readonly aiAnalysisService: AiAnalysisService,
     private readonly prisma: PrismaService,
+    private readonly rateLimit: AiRateLimitService,
   ) {}
 
   @Post(':offerId/analyze')
@@ -53,6 +56,15 @@ export class AiAnalysisController {
 
     if (offer.userId !== userId) {
       throw new ForbiddenException('Sem permissão para analisar esta oferta')
+    }
+
+    const canAnalyze = this.rateLimit.canAnalyze(userId)
+
+    if (!canAnalyze) {
+      throw new HttpException(
+        'Limite de 5 análises por hora atingido',
+        HttpStatus.TOO_MANY_REQUESTS,
+      )
     }
 
     const latestMetrics = offer.metrics
