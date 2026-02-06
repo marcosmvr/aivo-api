@@ -5,7 +5,7 @@ import {
   CreateUserPersistenceData,
   IAuthRepository,
 } from './auth.repository.interface'
-import { CreateUserSchema } from '../schema/create-user.schema'
+import { CreateUserSchema } from '../schemas/create-user.schema'
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {

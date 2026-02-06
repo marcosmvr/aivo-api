@@ -11,8 +11,8 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { hash, compare } from 'bcrypt'
 import { ZodError } from 'zod'
-import { CreateUserSchema } from './schema/create-user.schema'
-import { SignInUserSchema } from './schema/login-user.schema'
+import { CreateUserSchema } from './schemas/create-user.schema'
+import { SignInUserSchema } from './schemas/login-user.schema'
 import {
   AUTH_REPOSITORY,
   type IAuthRepository,
