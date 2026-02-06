@@ -1,24 +1,37 @@
 import {
-  Controller,
-  Post,
-  Get,
-  Param,
-  UseGuards,
-  Req,
-  HttpCode,
-  HttpStatus,
   BadRequestException,
-  NotFoundException,
+  Controller,
   ForbiddenException,
+  Get,
+  HttpCode,
   HttpException,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common'
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger'
 import { Request } from 'express'
-import { AiAnalysisService } from './ai-analysis.service'
-import { PrismaService } from '../prisma/prisma.service'
-import { AIAnalysisInputSchema } from './schemas/ai-analysis.schema'
-import { JwtAuthGuard } from 'src/auth/guards/auth.guard'
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator'
+import { JwtAuthGuard } from 'src/auth/guards/auth.guard'
+import { PrismaService } from '../prisma/prisma.service'
+import { AiAnalysisService } from './ai-analysis.service'
 import { AiRateLimitService } from './rate-limiting.service'
+import { AIAnalysisInputSchema } from './schemas/ai-analysis.schema'
+import {
+  AI_ANALYSIS_RESPONSE_EXAMPLE,
+  LIST_REPORTS_EXAMPLE,
+  SINGLE_REPORT_RESPONSE_EXAMPLE,
+} from './ai.swagger'
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -26,7 +39,8 @@ interface AuthenticatedRequest extends Request {
     email: string
   }
 }
-
+@ApiTags('AI Analysis')
+@ApiBearerAuth()
 @Controller('offers')
 @UseGuards(JwtAuthGuard)
 export class AiAnalysisController {
@@ -37,9 +51,25 @@ export class AiAnalysisController {
   ) {}
 
   @Post(':offerId/analyze')
+  @ApiOperation({ summary: 'Gerar análise de IA para uma oferta' })
+  @ApiParam({ name: 'offerId', description: 'ID da oferta com métricas' })
+  @ApiResponse({
+    status: 200,
+    description: 'Análise gerada com sucesso',
+    schema: { example: AI_ANALYSIS_RESPONSE_EXAMPLE },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Sem permissão ou Limite de análise atingido',
+  })
+  @ApiResponse({ status: 404, description: 'Oferta não encontrada' })
+  @ApiResponse({
+    status: 429,
+    description: 'Limite de 5 análises por hora atingido',
+  })
   @HttpCode(HttpStatus.OK)
   async analyzeOffer(
-    @Param('offerId') offerId: string,
+    @Param('offerId', ParseUUIDPipe) offerId: string,
     @Req() req: AuthenticatedRequest,
     @CurrentUser('id') userId: string,
   ) {
@@ -164,8 +194,10 @@ export class AiAnalysisController {
   }
 
   @Get(':offerId/reports')
+  @ApiOperation({ summary: 'Listar histórico de relatórios de uma oferta' })
+  @ApiResponse({ status: 200, schema: { example: LIST_REPORTS_EXAMPLE } })
   async listOfferReports(
-    @Param('offerId') offerId: string,
+    @Param('offerId', ParseUUIDPipe) offerId: string,
     @Req() req: AuthenticatedRequest,
   ) {
     const userId = req.user?.id
@@ -208,11 +240,20 @@ export class AiAnalysisController {
   }
 }
 
+@ApiTags('AI Reports')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get(':reportId')
+  @ApiOperation({ summary: 'Obter detalhes de um relatório específico' })
+  @ApiResponse({
+    status: 200,
+    schema: { example: SINGLE_REPORT_RESPONSE_EXAMPLE },
+  })
+  @ApiResponse({ status: 404, description: 'Relatório não encontrado' })
   async getReport(
     @Param('reportId') reportId: string,
     @Req() req: AuthenticatedRequest,
