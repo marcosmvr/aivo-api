@@ -21,6 +21,17 @@ import {
 export interface AuthResponse {
   access_token: string
   refresh_token: string
+  user: {
+    id: string
+    email: string
+    name: string
+    role?: string
+  }
+}
+
+interface TokenPair {
+  access_token: string
+  refresh_token: string
 }
 
 @Injectable()
@@ -54,7 +65,18 @@ export class AuthService {
       })
 
       this.logger.log(`Novo usuário criado: ${user.id}`)
-      return user
+
+      const tokens = this.generateTokens(user.id)
+
+      return {
+        ...tokens,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        },
+      }
     } catch (error) {
       return this.handleCreateUserError(error)
     }
@@ -71,7 +93,15 @@ export class AuthService {
       const tokens = this.generateTokens(user.id)
       this.logger.log(`Usuário autenticado: ${user.id}`)
 
-      return tokens
+      return {
+        ...tokens,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        },
+      }
     } catch (error) {
       return this.handleSignInError(error)
     }
@@ -100,7 +130,15 @@ export class AuthService {
       const tokens = this.generateTokens(userId)
       this.logger.log(`Token renovado para usuário: ${userId}`)
 
-      return tokens
+      return {
+        ...tokens,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        },
+      }
     } catch (error) {
       return this.handleRefreshTokenError(error)
     }
@@ -147,7 +185,7 @@ export class AuthService {
     }
   }
 
-  private generateTokens(userId: string): AuthResponse {
+  private generateTokens(userId: string): TokenPair {
     const accessToken = this.jwt.sign(
       { sub: userId },
       { expiresIn: this.config.get('JWT_EXPIRATION', '15m') },
