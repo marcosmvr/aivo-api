@@ -75,7 +75,7 @@ npx prisma db seed
 npm run start:dev
 ```
 
-O servidor estará disponível em `http://localhost:3000`
+O servidor estará disponível em `https://aivo-api.onrender.com`
 
 ## Variáveis de ambiente
 
@@ -97,7 +97,7 @@ NODE_ENV="development"
 
 ## Documentação da API
 
-Acesse `http://localhost:3000/docs` para a documentação Swagger completa com exemplos de requisições.
+Acesse `https://aivo-api.onrender.com/docs` para a documentação Swagger completa com exemplos de requisições.
 
 ### Autenticação
 
